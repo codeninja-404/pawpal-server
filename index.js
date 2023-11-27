@@ -24,6 +24,9 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // await client.connect();
+    // DATA COLLECTION
+
+    const userCollection = client.db("PawPalDB").collection("users");
 
     //JWT Token Genaretor
     app.post("/api/v1/jwt", async (req, res) => {
@@ -31,6 +34,20 @@ async function run() {
       const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "1h" });
       res.send({ token });
     });
+
+    // Create user
+    app.post("/api/v1/users", async (req, res) => {
+        const user = req.body;
+        
+        const query = { email: user.email };
+        const existingUser = await userCollection.findOne(query);
+        if (existingUser) {
+          return res.send({ message: "User already exiests.", insertedId: null });
+        }
+        const result = await userCollection.insertOne(user);
+        res.send(result);
+      });
+  
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
