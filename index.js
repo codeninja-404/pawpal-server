@@ -4,7 +4,7 @@ const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 // middleware
 
@@ -27,27 +27,93 @@ async function run() {
     // DATA COLLECTION
 
     const userCollection = client.db("PawPalDB").collection("users");
+    const categoryCollection = client.db("PawPalDB").collection("categorys");
+    const petCollection = client.db("PawPalDB").collection("pets");
 
     //JWT Token Genaretor
     app.post("/api/v1/jwt", async (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "1h" });
+      const token = jwt.sign(user, process.env.JWT_SECRET, {
+        expiresIn: "24hr",
+      });
       res.send({ token });
+    });
+
+    // middleware
+    const verifyToken = (req, res, next) => {
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "Unauthorized access" });
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(403).send({ message: "Forbidden access" });
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
+    // admin network request
+
+    app.get("/api/v1/users/admin/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      let admin = false;
+      if (user) {
+        admin = user?.role === "admin";
+        res.send({ admin });
+      }
+      const isAdmin = user;
     });
 
     // Create user
     app.post("/api/v1/users", async (req, res) => {
-        const user = req.body;
-        
-        const query = { email: user.email };
-        const existingUser = await userCollection.findOne(query);
-        if (existingUser) {
-          return res.send({ message: "User already exiests.", insertedId: null });
-        }
-        const result = await userCollection.insertOne(user);
-        res.send(result);
-      });
-  
+      const user = req.body;
+
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "User already exiests.", insertedId: null });
+      }
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    });
+
+    // get categorys
+    app.get("/api/v1/categorys", async (req, res) => {
+      const result = await categoryCollection.find().toArray();
+      res.send(result);
+    });
+
+    // post pet
+
+    app.post("/api/v1/addPets", verifyToken, async (req, res) => {
+      const item = req.body;
+      const result = await petCollection.insertOne(item);
+      res.send(result);
+    });
+    // delete pet
+    app.delete("/api/v1/delete/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await petCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // get pet for indivisual user
+    app.get("/api/v1/myAddedPets", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        email: email,
+      };
+      const result = await petCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
