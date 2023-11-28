@@ -89,6 +89,13 @@ async function run() {
       const result = await categoryCollection.find().toArray();
       res.send(result);
     });
+    // get single pet
+    app.get("/api/v1/pet/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await petCollection.findOne(query);
+      res.send(result);
+    });
 
     // post pet
 
@@ -107,13 +114,32 @@ async function run() {
 
     // update status
 
-    app.patch("/api/v1/status/:id", async (req, res) => {
+    app.patch("/api/v1/status/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          adopted: true,
+        },
+      };
+      const result = await petCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    // update pet
+    app.patch("/api/v1/update/:id", verifyToken, async (req, res) => {
       const item = req.body;
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedDoc = {
         $set: {
-          adopted: true
+          name: item.name,
+          age: item.age,
+          category: item.category,
+          location: item.location,
+          shortDescription: item.shortDescription,
+          longDescription: item.longDescription,
+          image: item.image,
         },
       };
       const result = await petCollection.updateOne(filter, updatedDoc);
