@@ -105,6 +105,21 @@ async function run() {
       res.send(result);
     });
 
+    // update status
+
+    app.patch("/api/v1/status/:id", async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          adopted: true
+        },
+      };
+      const result = await petCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
     // get pet for indivisual user
     app.get("/api/v1/myAddedPets", verifyToken, async (req, res) => {
       const email = req.query.email;
