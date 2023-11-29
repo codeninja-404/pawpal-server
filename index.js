@@ -54,6 +54,23 @@ async function run() {
         next();
       });
     };
+    //  check admin
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isAdmin = user?.role === "admin";
+      if (!isAdmin) {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
+      next();
+    };
+
+    // get users
+    app.get("/api/v1/users", verifyToken, verifyAdmin, async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
 
     // admin network request
 
@@ -85,6 +102,23 @@ async function run() {
       res.send(result);
     });
 
+    // make user admin
+    app.patch(
+      "/api/v1/toAdmin/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updatedDoc = {
+          $set: {
+            role: "admin",
+          },
+        };
+        const result = await userCollection.updateOne(filter, updatedDoc);
+        res.send(result);
+      }
+    );
     // get categorys
     app.get("/api/v1/categorys", async (req, res) => {
       const result = await categoryCollection.find().toArray();
@@ -95,6 +129,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await petCollection.findOne(query);
+      res.send(result);
+    });
+    // get single donation
+    app.get("/api/v1/singleDonation/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await donationCollection.findOne(query);
       res.send(result);
     });
 
@@ -166,6 +207,24 @@ async function run() {
         },
       };
       const result = await petCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+    // update donation
+    app.patch("/api/v1/updateDonation/:id", verifyToken, async (req, res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          name: item.name,
+          maxAmount: item.maxAmount,
+          lastDate: item.lastDate,
+          shortDescription: item.shortDescription,
+          longDescription: item.longDescription,
+          image: item.image,
+        },
+      };
+      const result = await donationCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
 
