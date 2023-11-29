@@ -29,6 +29,7 @@ async function run() {
     const userCollection = client.db("PawPalDB").collection("users");
     const categoryCollection = client.db("PawPalDB").collection("categorys");
     const petCollection = client.db("PawPalDB").collection("pets");
+    const donationCollection = client.db("PawPalDB").collection("donations");
 
     //JWT Token Genaretor
     app.post("/api/v1/jwt", async (req, res) => {
@@ -102,6 +103,14 @@ async function run() {
     app.post("/api/v1/addPets", verifyToken, async (req, res) => {
       const item = req.body;
       const result = await petCollection.insertOne(item);
+      res.send(result);
+    });
+
+    // post donation
+
+    app.post("/api/v1/createDonation", verifyToken, async (req, res) => {
+      const item = req.body;
+      const result = await donationCollection.insertOne(item);
       res.send(result);
     });
     // delete pet
