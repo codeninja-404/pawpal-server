@@ -134,6 +134,20 @@ async function run() {
       const result = await petCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
+    // update donation status
+    app.patch("/api/v1/donationStatus/:id", verifyToken, async (req, res) => {
+      const item = req.body;
+
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: item?.status,
+        },
+      };
+      const result = await donationCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
 
     // update pet
     app.patch("/api/v1/update/:id", verifyToken, async (req, res) => {
@@ -162,6 +176,14 @@ async function run() {
         email: email,
       };
       const result = await petCollection.find(query).toArray();
+      res.send(result);
+    });
+    app.get("/api/v1/myAddedCampaigns", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        email: email,
+      };
+      const result = await donationCollection.find(query).toArray();
       res.send(result);
     });
 
