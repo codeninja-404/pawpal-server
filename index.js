@@ -124,6 +124,11 @@ async function run() {
       const result = await categoryCollection.find().toArray();
       res.send(result);
     });
+    // get all pets
+    app.get("/api/v1/allPets", async (req, res) => {
+      const result = await petCollection.find().toArray();
+      res.send(result);
+    });
     // get single pet
     app.get("/api/v1/pet/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
@@ -170,6 +175,18 @@ async function run() {
       const updatedDoc = {
         $set: {
           adopted: true,
+        },
+      };
+      const result = await petCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+    app.patch("/api/v1/statusAdmin/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          adopted: query.adopted,
         },
       };
       const result = await petCollection.updateOne(filter, updatedDoc);
