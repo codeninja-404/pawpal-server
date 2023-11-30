@@ -30,6 +30,9 @@ async function run() {
     const categoryCollection = client.db("PawPalDB").collection("categorys");
     const petCollection = client.db("PawPalDB").collection("pets");
     const donationCollection = client.db("PawPalDB").collection("donations");
+    const adoptionRequestCollection = client
+      .db("PawPalDB")
+      .collection("adoptionRequests");
 
     //JWT Token Genaretor
     app.post("/api/v1/jwt", async (req, res) => {
@@ -151,6 +154,13 @@ async function run() {
       const result = await petCollection.insertOne(item);
       res.send(result);
     });
+    // post adoption request
+
+    app.post("/api/v1/adoptionReq", verifyToken, async (req, res) => {
+      const item = req.body;
+      const result = await adoptionRequestCollection.insertOne(item);
+      res.send(result);
+    });
 
     // post donation
 
@@ -164,6 +174,13 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await petCollection.deleteOne(query);
+      res.send(result);
+    });
+    // delete DOnation campaign
+    app.delete("/api/v1/deleteCampaign/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await donationCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -180,6 +197,7 @@ async function run() {
       const result = await petCollection.updateOne(filter, updatedDoc);
       res.send(result);
     });
+
     app.patch("/api/v1/statusAdmin/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = req.body;
@@ -262,6 +280,25 @@ async function run() {
       const result = await donationCollection.find(query).toArray();
       res.send(result);
     });
+    // all donations
+    app.get("/api/v1/allCampaigns", verifyToken, async (req, res) => {
+      const result = await donationCollection.find().toArray();
+      res.send(result);
+    });
+
+       // payment intent
+       app.post("/api/v1/create-payment-intent", async (req, res) => {
+        const { price } = req.body;
+        const amount = parseInt(price * 100);
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: "usd",
+          payment_method_types: ["card"],
+        });
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
