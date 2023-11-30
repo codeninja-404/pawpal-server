@@ -8,7 +8,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 // middleware
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "https://pawpal-client.web.app" }));
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.raw2hqu.mongodb.net/?retryWrites=true&w=majority`;
@@ -286,19 +286,7 @@ async function run() {
       res.send(result);
     });
 
-       // payment intent
-       app.post("/api/v1/create-payment-intent", async (req, res) => {
-        const { price } = req.body;
-        const amount = parseInt(price * 100);
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: amount,
-          currency: "usd",
-          payment_method_types: ["card"],
-        });
-        res.send({
-          clientSecret: paymentIntent.client_secret,
-        });
-      });
+    
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
